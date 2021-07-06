@@ -1,0 +1,13 @@
+{
+  "name": "LokelWebsite",
+  "version": "1.0.0",
+  "description": "A Website for the mobile app Lokel",
+  "main": "index.js",
+  "repository": "https://github.com/prinse1545/LokelWebsite.git",
+  "author": "Philipp M. Srivastava",
+  "license": "Commercial",
+  "private": true,
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
