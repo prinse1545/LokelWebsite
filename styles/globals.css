@@ -1,0 +1,34 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: avenir-next, sans-serif;
+  font-weight: normal;
+  font-size: 22;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+  color: #ff69b4;
+  font-family: avenir, sans-serif;
+  font-weight: normal;
+}
+
+footer {
+  height: 5%;
+  padding: 5%;
+  background-color: #313438;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  padding: 1%;
+  align-items: center;
+  width: 100%;
+}

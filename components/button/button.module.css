@@ -1,0 +1,9 @@
+.container {
+  border-radius: 2%;
+  border-width: thin;
+  border-color: "red";
+  cursor: pointer;
+  width: 60px;
+  white-space: nowrap;
+  padding: 1%;
+}

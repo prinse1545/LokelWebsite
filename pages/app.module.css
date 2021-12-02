@@ -1,0 +1,52 @@
+.right {
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 7.5%;
+}
+
+.left {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.map_container {
+  height: 600px;
+  filter: blur(4.5px);
+}
+
+.title {
+  font-family: inherit;
+  position: absolute;
+  top: 25%;
+  left: 10%;
+  right: 10%;
+  background-color: rgba(29.35, 32.61, 38.04, 0.00);
+}
+
+.screenshot {
+  display: flex;
+  flex-direction: row;
+  align-self: center;
+  align-items: center;
+  padding-top: 2%;
+}
+
+.screenshots_container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  margin-bottom: 5%;
+}
+
+.screenshot_call {
+  padding-bottom: 10%;
+  width: 70%;
+}
