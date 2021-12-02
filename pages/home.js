@@ -14,15 +14,15 @@ const styleurl = "mapbox://styles/lokel/ckbbguxgw08mv1ipbeym55gn6"
 const screenshots = [
   {
     path: "/map.png",
-    text: "Young adults hop on our mobile app looking for exclusive experiences"
+    text: "Surround yourself with activities – it's all there in the Event Map." // (we can change this name later)
   },
   {
     path: "/filters.png",
-    text: "In that process they choose filters to narrow their search"
+    text: "Find exactly what you're looking for – whether it's a party or a pastry, we've got you covered."
   },
   {
     path: "/promotion.png",
-    text: "Your promotions turn from annoying ads into useful content that the user is looking for"
+    text: "Support local businesses – and get some sweet deals (deals not limited to sweet)."
   }
 ]
 
@@ -68,10 +68,10 @@ const Home = ({ Component, pageProps }) => {
            </div>
           </div>
           <center>
-            <h1 className={styles.title}>Advertise to young adults looking for your products or services in your proximity and gain communication with a loyal customer base</h1>
+            <h1 className={styles.title}>Find your Experience.</h1>
           </center>
           <center className={"blur"}>
-            <h1>How it works</h1>
+            <h1>Lokel puts the social back in social media. Broadcast your event, your business, or just what's around you.</h1>
             <div className={styles.screenshots_container}>
               {
                 screenshots.map((shot) => (
@@ -88,8 +88,8 @@ const Home = ({ Component, pageProps }) => {
               }
             </div>
             <h2 className={styles.screenshot_call}>
-            Finally if the user is intrigued with your promotion they can subscribe to receive notifications regarding future promotions,
-            giving your business a group of interested future customers to interact with, and it's all free!
+            Whether you're an interested customer, a downtown frequent flier or simply looking for a spontaneous experience, it's all there – just open the app and see hundreds of activities
+            at your fingertips. I think we could reword this a bit.
             </h2>
           </center>
         </div>
