@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState, useContext } from "react"
 import Image from "next/image"
-import Button from "../components/button"
+import Link from "next/link"
+import { useRouter } from "next/router"
+import { Button } from "react-bootstrap"
+import UtilityContext from "./config/utility"
 import mapboxgl from "!mapbox-gl"
 import styles from "./app.module.css"
 import "mapbox-gl/dist/mapbox-gl.css"
@@ -34,6 +37,10 @@ const Home = ({ Component, pageProps }) => {
   const [lat, setLat] = useState(42);
   const [zoom, setZoom] = useState(9);
 
+  const { auth, signout } = useContext(UtilityContext)
+
+  const router = useRouter()
+
   useEffect(() => {
     if (map.current) return; // initialize map only once
     map.current = new mapboxgl.Map({
@@ -50,21 +57,35 @@ const Home = ({ Component, pageProps }) => {
         <div ref={mapContainer} className={styles.map_container} />
         <div className={"row"}>
           <div className={styles.left}>
+          <Link href={"/home"}>
             <Image
              src={"/logo.png"}
              height={40}
              width={40}
              />
+           </Link>
            </div>
            <div className={styles.right}>
-            <Button
-             link={"/login"}
-             text={"Log In"}
-            />
-            <Button
-             link={"/signup"}
-             text={"Sign Up"}
-            />
+            {
+              auth === null ?
+              <>
+                <Button variant="primary" type="submit" onClick={() => router.push("/login")}>
+                  Log In
+                </Button>
+                <Button variant="secondary" type="submit" onClick={() => router.push("/signup")}>
+                  Sign Up
+                </Button>
+              </>
+              :
+              <>
+                <Button variant="primary" type="submit" onClick={() => router.push("/dashboard")}>
+                  Dash
+                </Button>
+                <Button variant="secondary" type="submit" onClick={() => signout()}>
+                  Sign Out
+                </Button>
+              </>
+            }
            </div>
           </div>
           <center>
