@@ -23,6 +23,10 @@
   filter: blur(4.5px);
 }
 
+.map_blur {
+  filter: blur(4.5px);
+}
+
 .title {
   font-family: inherit;
   position: absolute;
@@ -50,4 +54,21 @@
 .screenshot_call {
   padding-bottom: 10%;
   width: 70%;
+}
+
+.icon {
+  margin: 8px;
+  cursor: grab;
+}
+
+.address_panel {
+  cursor: grab;
+}
+
+.footer {
+  bottom: 0px;
+}
+
+.event_card_style {
+  width: 300px;
 }

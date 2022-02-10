@@ -22,6 +22,10 @@ const LOG_IN = gql`
 query login($email: String!, $password: String!) {
   loginEmail(email: $email, password: $password) {
     token
+    user {
+      id
+      profile
+    }
   }
 }
 
@@ -47,7 +51,7 @@ const LogIn = (props) => {
 
   useEffect(() => {
     if(data !== undefined && data?.loginEmail?.token !== null) {
-      signin(data.loginEmail.token)
+      signin(data.loginEmail.token, data.loginEmail.user.id)
     }
   }, [data])
 

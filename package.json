@@ -14,10 +14,19 @@
     "js-cookie": "^3.0.1",
     "js-cookies": "^1.0.4",
     "mapbox-gl": "^2.6.0",
+    "net": "^1.0.2",
     "next": "12.0.5",
     "react": "17.0.2",
     "react-bootstrap": "^2.0.4",
-    "react-dom": "17.0.2"
+    "react-bootstrap-icons": "^1.7.2",
+    "react-datetime-picker": "^3.4.3",
+    "react-dom": "17.0.2",
+    "react-map-gl": "^6.1.19",
+    "subscriptions-transport-ws": "^0.11.0",
+    "tls": "^0.0.1",
+    "webpack-node-externals": "^3.0.0",
+    "websocket": "^1.0.34",
+    "ws": "^8.4.2"
   },
   "devDependencies": {
     "eslint": "7",

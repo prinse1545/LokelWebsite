@@ -45,7 +45,7 @@ const SIGN_UP = gql`
 
 const SignUp = (props) => {
 
-  const { setCookie } = useContext(UtilityContext)
+  const { signin } = useContext(UtilityContext)
 
   const [errMsg, setMsg] = useState(null)
   const [user, dispatch] = useReducer(
@@ -72,14 +72,8 @@ const SignUp = (props) => {
   const router = useRouter()
 
   useEffect(() => {
-    if(error !== undefined) {
-      setMsg(error.message)
-    }
-  }, [error])
-
-  useEffect(() => {
     if(data !== undefined && data?.signup?.token !== null) {
-      signin(data.signup.token)
+      signin(data.signup.token, data.signup.user.id)
     }
   }, [data])
 
@@ -102,7 +96,7 @@ const SignUp = (props) => {
     // deleting confirm password field
     delete user.confirmPassword
 
-    signup({ variables: Object.assign(user, { private: false, role: "BUSINESS" }) })
+    signup({ variables: Object.assign(user, { private: false, role: "BUSINESS" }) }).catch((err) => setMsg(err.message))
   }
 
   return (

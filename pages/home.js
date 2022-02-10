@@ -1,17 +1,13 @@
-import React, { useEffect, useRef, useState, useContext } from "react"
+import React, { useEffect, useState, useContext } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { Button } from "react-bootstrap"
 import UtilityContext from "./config/utility"
-import mapboxgl from "!mapbox-gl"
+import ReactMapGL from "react-map-gl"
 import styles from "./app.module.css"
 import "mapbox-gl/dist/mapbox-gl.css"
 
-
-mapboxgl.accessToken = "pk.eyJ1IjoibG9rZWwiLCJhIjoiY2thdm1meGZ1MTA1MDJ5b2Mydjh5dGx1dyJ9.noZVSQqdjHFatcTJcLUk7A"
-
-const styleurl = "mapbox://styles/lokel/ckbbguxgw08mv1ipbeym55gn6"
 
 
 const screenshots = [
@@ -31,30 +27,28 @@ const screenshots = [
 
 const Home = ({ Component, pageProps }) => {
 
-  const mapContainer = useRef(null);
-  const map = useRef(null);
-  const [lng, setLng] = useState(-88.6377);
-  const [lat, setLat] = useState(42);
-  const [zoom, setZoom] = useState(9);
-
   const { auth, signout } = useContext(UtilityContext)
 
   const router = useRouter()
 
-  useEffect(() => {
-    if (map.current) return; // initialize map only once
-    map.current = new mapboxgl.Map({
-    container: mapContainer.current,
-    style: styleurl,
-    center: [lng, lat],
-    zoom: zoom
-    });
-  },[]);
+  const [viewport, setViewport] = useState({
+    width: "100%",
+    height: 600,
+    latitude: 42,
+    longitude: -88.6377,
+    zoom: 8
+  });
 
   return (
     <>
       <div>
-        <div ref={mapContainer} className={styles.map_container} />
+        <ReactMapGL
+          {...viewport}
+          onViewportChange={nextViewport => setViewport(nextViewport)}
+          mapboxApiAccessToken={"pk.eyJ1IjoibG9rZWwiLCJhIjoiY2thdm1meGZ1MTA1MDJ5b2Mydjh5dGx1dyJ9.noZVSQqdjHFatcTJcLUk7A"}
+          mapStyle={"mapbox://styles/lokel/ckbbguxgw08mv1ipbeym55gn6"}
+          className={styles.map_blur}
+        />
         <div className={"row"}>
           <div className={styles.left}>
           <Link href={"/home"}>

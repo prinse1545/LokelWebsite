@@ -11,7 +11,7 @@
 // importing tools
 import React, { useReducer, useEffect } from "react";
 import { ApolloProvider } from "@apollo/client";
-import client from "./config/apollo";
+import { apolloConfig } from "./config/apollo";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
@@ -33,15 +33,21 @@ const App = ({ Component, pageProps }) => {
       }
     },
     {
-      auth: null
+      auth: null,
+      userId: ""
     }
   )
 
   useEffect(() => {
     const tok = Cookies.get("o")
+    const id = Cookies.get("e")
 
     if(tok !== undefined) {
       utilityFunctionality.updateField({ auth: tok })
+    }
+
+    if(id !== undefined) {
+      utilityFunctionality.updateField({ userId: id })
     }
   }, [])
 
@@ -98,7 +104,7 @@ const App = ({ Component, pageProps }) => {
       return Cookies.get(key)
     },
     updateField: updateField,
-    signin: (token) => {
+    signin: (token, id) => {
       // Function: signin, a function that signs in the user
       //
       // Parameter(s):
@@ -110,8 +116,10 @@ const App = ({ Component, pageProps }) => {
       //   none
 
       setCookie("o", token) // saving cookie for persitance
+      setCookie("e", id)
 
       updateField({ auth: token })
+      updateField({ userId: id })
 
       router.push("/dashboard")
 
@@ -131,14 +139,18 @@ const App = ({ Component, pageProps }) => {
 
       updateField({ auth: null })
     },
-    auth: state.auth
+    auth: state.auth,
+    userId: state.userId
   }
+
+  const client = apolloConfig(state.auth)
 
   return (
     <>
       <Head>
        <meta name="viewport" content="width=device-width, initial-scale=1"/>
        <link rel="icon" href="/logo.png" />
+      />
       </Head>
       <ApolloProvider client={client}>
         <UtilityContext.Provider value={utilityFunctionality}>
