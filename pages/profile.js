@@ -1,18 +1,3 @@
-//profile page 
-
-/*
-Business user profile on main frontend
-
-Email username and profile picture
-
-And they should be able to edit these fields along with password 
-
-We have most of the backend for that with update user and etc 
-
-Pull up form with info filled in 
-
-Make a separate file / screen for this 
-*/
 import React, { useEffect, useRef, useState, useContext } from "react"
 import { useLazyQuery, gql } from "@apollo/client";
 import Image from "next/image"
@@ -22,48 +7,44 @@ import { Button } from "react-bootstrap"
 import Form from 'react-bootstrap/Form'
 import UtilityContext from "./config/utility"
 import styles from "./app.module.css"
+const { auth } = useContext(UtilityContext)
 
 const CHANGE_USERNAME = gql`
-
-  mutation signup(
+  mutation changeUsername(
     $username: String!,
-    ) {
-    signup(
+  ) {
+    changeUsername(
       username: $username,
     ) {
+      username
     }
   }
-
 `;
 
 
 const CHANGE_EMAIL = gql`
-
-  mutation signup(
-    $email: String,
-    ) {
-    signup(
-      email: $email,
-    ) {
-        token
-    }
+mutation changeEmail(
+  $email: String!,
+) {
+  changeEmail(
+    email: $email,
+  ) {
+    email
   }
-
+}
 `;
 
 
 const CHANGE_PASSWORD = gql`
-
-  mutation signup(
-    $password: String!
-    ) {
-    signup(
-      password: $password
-    ) {
-       token
-    }
+mutation changePassword(
+  $password: String!,
+) {
+  changeUsername(
+    password: $password,
+  ) {
+    username
   }
-
+}
 `;
 
 const GET_USERNAME_EMAIL_PASSWORD = gql`
