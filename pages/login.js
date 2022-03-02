@@ -25,6 +25,8 @@ query login($email: String!, $password: String!) {
     user {
       id
       profile
+      email
+      username
     }
   }
 }
@@ -51,7 +53,7 @@ const LogIn = (props) => {
 
   useEffect(() => {
     if(data !== undefined && data?.loginEmail?.token !== null) {
-      signin(data.loginEmail.token, data.loginEmail.user.id)
+      signin(data.loginEmail.token, data.loginEmail.user)
     }
   }, [data])
 

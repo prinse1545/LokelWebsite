@@ -1,101 +1,73 @@
 import React, { useEffect, useRef, useState, useContext } from "react"
-import { useLazyQuery, gql } from "@apollo/client";
+import { useMutation, useLazyQuery, gql } from "@apollo/client";
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { Button } from "react-bootstrap"
+import { Button, Alert } from "react-bootstrap"
 import Form from 'react-bootstrap/Form'
 import UtilityContext from "./config/utility"
 import styles from "./app.module.css"
-const { auth } = useContext(UtilityContext)
 
-const CHANGE_USERNAME = gql`
-  mutation changeUsername(
-    $username: String!,
+const UPDATE_USER = gql`
+  mutation updateUser(
+    $id: ID!,
+    $data: JSON!,
   ) {
-    changeUsername(
-      username: $username,
+    updateUser(
+      id: $id,
+      data: $data,
     ) {
       username
+      email
+      profile
     }
   }
 `;
 
-
-const CHANGE_EMAIL = gql`
-mutation changeEmail(
-  $email: String!,
-) {
-  changeEmail(
-    email: $email,
-  ) {
-    email
-  }
-}
-`;
-
-
-const CHANGE_PASSWORD = gql`
-mutation changePassword(
-  $password: String!,
-) {
-  changeUsername(
-    password: $password,
-  ) {
-    username
-  }
-}
-`;
-
-const GET_USERNAME_EMAIL_PASSWORD = gql`
-  query userInfo($email: String!) {
-      getUserInfo(email: $email) {
-          user {
-              username
-              email
-          }
-      }
-  }
-`
-
-const Home = ({ Component, pageProps }) => {
-  const { auth, signout } = useContext(UtilityContext)
+const Profile = ({ Component, pageProps }) => {
+  const { user, userId, auth, signout, setCookie, updateField } = useContext(UtilityContext)
   const [currEmail, setCurrEmail] = useState("");
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
-
+  const [profile, setProfile] = useState("")
+  const [errMsg, setMsg] = useState(null);
   const router = useRouter()
 
-  useEffect(() => {
-      //get username and email (not password) from query
-    const [getUserInfo, { data, loading, error }] = useLazyQuery(GET_USERNAME_EMAIL_PASSWORD)
-    getUserInfo({ variables: { email: email } })
-    setCurrEmail(data.email)
-    setUsername(data.username)
-  },[]);
+  const [updateUser, { data, error, loading }] = useMutation(UPDATE_USER)
+
+  const updateFieldCookies = (newUser) => {
+    updateField(newUser)
+    setCookie("u", JSON.stringify(newUser))
+  }
+
+  useEffect(
+    () => {
+      if(user) {
+        setCurrEmail(user.email);
+        setUsername(user.username);
+        setProfile(user.username);
+      }
+    }, [user]
+  )
 
   const updateProfile = () => {
-    const [changeEmail, { edata, eerror, eloading }] = useMutation(CHANGE_EMAIL)
-    const [changePassword, { pdata, perror, ploading }] = useMutation(CHANGE_PASSWORD)
-    const [changeUsername, { udata, uerror, uloading }] = useMutation(CHANGE_USERNAME)
-
-      console.log("updating profile")
       //update email and password if changed
-      if(username !== "") {
-        console.log("set username in database to ", username)
-        changeUsername({ variables: { username: username } })
+      if(username !== "" && username !== user.username) {
+        updateUser({ variables: { id: userId, data: { username: username } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
       }
 
-      if(currEmail !== "") {
-          console.log("set email in database to ", currEmail)
-          changeEmail({ variables: { email: email } })
+      if(currEmail !== "" && currEmail !== user.email) {
+          updateUser({ variables: { id: userId, data: { email: currEmail, role: "BUSINESS" } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
 
       }
 
       if(password !== "") {
-          console.log("set password in database to ", password)
-          changePassword({ variables: { password: password } })
+          updateUser({ variables: { id: userId, data: { password: password } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
       }
+
+      if(profile !== "") {
+        updateUser({ variables: { id: userId, data: { profile: profile } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+    }
   }
 
   const userEnteredInput = () => { //only show update button if user has entered text
@@ -157,17 +129,17 @@ const Home = ({ Component, pageProps }) => {
                   <h1>My Profile</h1>
                   <Form>
                   <Form.Group className="mb-3" controlId="formBasicEmail">
-                        <Form.Label>Your current username</Form.Label>
+                        <Form.Label>Change your username</Form.Label>
                         <Form.Control type="email" placeholder={username} onChange={(e) => setUsername(e.target.value)}/>
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="formBasicEmail">
-                        <Form.Label>Your current email</Form.Label>
+                        <Form.Label>Change your email</Form.Label>
                         <Form.Control type="email" placeholder={currEmail} onChange={(e) => setCurrEmail(e.target.value)}/>
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="formBasicPassword">
-                        <Form.Label>Change password</Form.Label>
+                        <Form.Label>Change your password</Form.Label>
                         <Form.Control type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)}/>
                     </Form.Group>
                     </Form>
@@ -177,7 +149,7 @@ const Home = ({ Component, pageProps }) => {
                         Update my profile
                         </Button>
                         :
-                        <h3>Enter a new email or password to update your profile.</h3>
+                        <h3>Change your information before updating your profile.</h3>
                     }
                 </>
             }
@@ -189,9 +161,17 @@ const Home = ({ Component, pageProps }) => {
            Lokel LLC © 2021
           </center>
         </footer>
+        {
+          errMsg !== null &&
+          <Alert variant="danger" onClose={() => setMsg(null)} dismissible>
+            <p className={"mb-0"}>
+             {errMsg}
+            </p>
+          </Alert>
+        }
     </>
   )
 }
 
 
-export default Home
+export default Profile
