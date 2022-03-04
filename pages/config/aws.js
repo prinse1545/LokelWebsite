@@ -6,8 +6,7 @@ import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-id
 
 const S3Config = () => {
 
-  AWS_ID_POOL = process.env.AWS_ID_POOL
-
+  const AWS_ID_POOL = process.env.AWS_ID_POOL
   // creating aws s3 client
   const client = new S3Client({
     region: "us-east-2",

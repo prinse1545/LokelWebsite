@@ -7,7 +7,7 @@ import { Button, Alert } from "react-bootstrap"
 import Form from 'react-bootstrap/Form'
 import UtilityContext from "./config/utility"
 import styles from "./app.module.css"
-import S3Config from "./config/aws"
+import { S3Config } from "./config/aws"
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 const UPDATE_USER = gql`
