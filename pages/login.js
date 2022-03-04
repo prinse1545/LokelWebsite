@@ -11,10 +11,13 @@
 // importing tools
 import React, { useState, useEffect, useContext } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/router"
 import { useLazyQuery, gql } from "@apollo/client";
 import { Form, Button, Row, Alert } from "react-bootstrap"
+import { ArrowLeft } from "react-bootstrap-icons";
 import UtilityContext from "./config/utility"
+import styles from "./app.module.css"
 
 
 const LOG_IN = gql`
@@ -57,6 +60,14 @@ const LogIn = (props) => {
 
   return (
     <center>
+      <div className={styles.left}>
+        <Link href={"/"}>
+          <ArrowLeft
+           height={40}
+           width={40}
+           />
+         </Link>
+       </div>
       <div className={"auth_form_container"}>
 
       <h1>Log In</h1>

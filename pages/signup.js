@@ -10,10 +10,14 @@
 
 // importing tools
 import React, { useReducer, useState, useEffect, useContext } from "react"
+import Link from "next/link"
 import { useMutation, gql } from "@apollo/client";
 import { useRouter } from "next/router"
 import { Form, Button, Alert } from "react-bootstrap"
+import { ArrowLeft } from "react-bootstrap-icons";
 import UtilityContext from "./config/utility"
+import styles from "./app.module.css"
+
 
 const SIGN_UP = gql`
 
@@ -92,15 +96,24 @@ const SignUp = (props) => {
       setMsg("It looks like the two passwords don't match!")
       return
     }
-
+    // creating new user
+    const newUser = user
     // deleting confirm password field
-    delete user.confirmPassword
+    delete newUser.confirmPassword
 
-    signup({ variables: Object.assign(user, { private: false, role: "BUSINESS" }) }).catch((err) => setMsg(err.message))
+    signup({ variables: Object.assign(newUser, { private: false, role: "BUSINESS" }) }).catch((err) => setMsg(err.message))
   }
 
   return (
     <center>
+      <div className={styles.left}>
+        <Link href={"/"}>
+          <ArrowLeft
+           height={40}
+           width={40}
+           />
+         </Link>
+       </div>
       <div className={"auth_form_container"}>
        <h1>Sign Up</h1>
        <Form>

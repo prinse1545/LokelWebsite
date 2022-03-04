@@ -51,7 +51,7 @@ const Home = ({ Component, pageProps }) => {
         />
         <div className={"row"}>
           <div className={styles.left}>
-          <Link href={"/home"}>
+          <Link href={"/"}>
             <Image
              src={"/logo.png"}
              height={40}
@@ -104,13 +104,13 @@ const Home = ({ Component, pageProps }) => {
             </div>
             <h2 className={styles.screenshot_call}>
             Whether you're an interested customer, a downtown frequent flier or simply looking for a spontaneous experience, it's all there – just open the app and see hundreds of activities
-            at your fingertips. I think we could reword this a bit.
+            at your fingertips.
             </h2>
           </center>
         </div>
         <footer>
           <center>
-           Lokel LLC © 2021
+           Lokel LLC © 2021-22
           </center>
         </footer>
     </>
