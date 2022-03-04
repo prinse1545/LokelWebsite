@@ -7,6 +7,8 @@ import { Button, Alert } from "react-bootstrap"
 import Form from 'react-bootstrap/Form'
 import UtilityContext from "./config/utility"
 import styles from "./app.module.css"
+import S3Config from "./config/aws"
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 const UPDATE_USER = gql`
   mutation updateUser(
@@ -24,12 +26,17 @@ const UPDATE_USER = gql`
   }
 `;
 
+const s3 = S3Config()
+
 const Profile = ({ Component, pageProps }) => {
   const { user, userId, auth, signout, setCookie, updateField } = useContext(UtilityContext)
   const [currEmail, setCurrEmail] = useState("");
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
   const [profile, setProfile] = useState("")
+  const [newProfileExists, setNewProfileExists] = useState(false);
+  const [fileUrl, setFileUrl] = useState(null);
+  const [imageBase, setImageBase] = useState("")
   const [errMsg, setMsg] = useState(null);
   const router = useRouter()
 
@@ -45,10 +52,40 @@ const Profile = ({ Component, pageProps }) => {
       if(user) {
         setCurrEmail(user.email);
         setUsername(user.username);
-        setProfile(user.username);
+        setProfile(user.profile);
       }
     }, [user]
   )
+
+  const getProfilePicture = (profileLink) => {
+    `https://verbindung.s3.us-east-2.amazonaws.com/users/${profileLink}/$normal.png`
+  }
+
+  const setProfilePicture = (image) => {
+    console.log("uploading...")
+    //upload to s3, get link
+        // uploading new picture to aws
+        const res = s3.send(
+          new PutObjectCommand({
+            Bucket: "verbindung",
+            Key: "preprocess/users/" + user.profile + ".png",
+            Body: atob(imageBase)
+          })
+        );
+    setProfile(user.profile)
+
+  }
+
+  function processImage(event){
+    console.log("process image triggered")
+    const imageFile = event.target.files[0];
+    const imageUrl = URL.createObjectURL(imageFile);
+    var reader = new FileReader();
+    setFileUrl(imageUrl)
+    reader.readAsDataURL(imageFile)
+    setImageBase(reader.result)
+    setNewProfileExists(true)
+ }
 
   const updateProfile = () => {
       //update email and password if changed
@@ -65,20 +102,22 @@ const Profile = ({ Component, pageProps }) => {
           updateUser({ variables: { id: userId, data: { password: password } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
       }
 
-      if(profile !== "") {
+      if(newProfileExists) {
+        console.log("we made a profile photo, here it is: ", profile)
+        setProfilePicture(imageBase) //upload picture to AWS
         updateUser({ variables: { id: userId, data: { profile: profile } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+        setNewProfileExists(false);
     }
   }
 
   const userEnteredInput = () => { //only show update button if user has entered text
-      return (password !== "" && password.length > 5) || (currEmail !== "" && password === "") || (username !== "" && password === "") 
+      return ((password !== "" && password.length > 5) || (currEmail !== "" && password === "") || (username !== "" && password === "") || newProfileExists)
   }
 
 
   return (
     <>
       <div>
-          <div>
         <div className={"row"}>
           <div className={styles.left}>
           <Link href={"/home"}>
@@ -112,7 +151,6 @@ const Profile = ({ Component, pageProps }) => {
             }
            </div>
           </div>
-            </div>
             <div>
                 <br/>
             <br/>
@@ -127,6 +165,11 @@ const Profile = ({ Component, pageProps }) => {
                 <>
                 <br/>
                   <h1>My Profile</h1>
+                  <h3>Current photo</h3>
+                  <img src={getProfilePicture(profile)} alt = "You don't have a photo yet."/>
+                  <h3>Change my photo</h3>
+                  <img src={fileUrl}/>
+                    <input type="file" accept="image/*" onChange={processImage}></input>
                   <Form>
                   <Form.Group className="mb-3" controlId="formBasicEmail">
                         <Form.Label>Change your username</Form.Label>
