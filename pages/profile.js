@@ -38,6 +38,7 @@ const Profile = ({ Component, pageProps }) => {
   const [fileUrl, setFileUrl] = useState(null);
   const [imageBase, setImageBase] = useState("")
   const [errMsg, setMsg] = useState(null);
+  const [changedInfo, setChangedInfo] = useState(false)
   const router = useRouter()
 
   const [updateUser, { data, error, loading }] = useMutation(UPDATE_USER)
@@ -90,22 +91,25 @@ const Profile = ({ Component, pageProps }) => {
   const updateProfile = () => {
       //update email and password if changed
       if(username !== "" && username !== user.username) {
-        updateUser({ variables: { id: userId, data: { username: username } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+        setChangedInfo(true)
+        updateUser({ variables: { id: userId, data: { username: username } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err)); setChangedInfo(false)})
       }
 
       if(currEmail !== "" && currEmail !== user.email) {
-          updateUser({ variables: { id: userId, data: { email: currEmail, role: "BUSINESS" } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
-
+          setChangedInfo(true)
+          updateUser({ variables: { id: userId, data: { email: currEmail, role: "BUSINESS" } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err)); setChangedInfo(false)})
       }
 
       if(password !== "") {
-          updateUser({ variables: { id: userId, data: { password: password } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
-      }
+          setChangedInfo(true)
+          updateUser({ variables: { id: userId, data: { password: password } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err)); setChangedInfo(false)})
+        }
 
       if(newProfileExists) {
         console.log("we made a profile photo, here it is: ", profile)
         setProfilePicture(imageBase) //upload picture to AWS
-        updateUser({ variables: { id: userId, data: { profile: profile } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+        setChangedInfo(true)
+        updateUser({ variables: { id: userId, data: { profile: profile } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err)); setChangedInfo(false)})
         setNewProfileExists(false);
     }
   }
@@ -114,6 +118,7 @@ const Profile = ({ Component, pageProps }) => {
       return ((password !== "" && password.length > 5) || (currEmail !== "" && password === "") || (username !== "" && password === "") || newProfileExists)
   }
 
+  console.log(changedInfo, " is changed info")
 
   return (
     <>
@@ -164,6 +169,7 @@ const Profile = ({ Component, pageProps }) => {
                 :
                 <>
                 <br/>
+                {changedInfo && <h1 style = {{color: "green"}}>Your profile was updated.</h1>}
                   <h1>My Profile</h1>
                   <h3>Current photo</h3>
                   <img src={getProfilePicture(profile)} alt = "You don't have a photo yet."/>
