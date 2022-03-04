@@ -172,9 +172,9 @@ const Profile = ({ Component, pageProps }) => {
                 {changedInfo && <h1 style = {{color: "green"}}>Your profile was updated.</h1>}
                   <h1>My Profile</h1>
                   <h3>Current photo</h3>
-                  <img src={getProfilePicture(profile)} alt = "You don't have a photo yet."/>
+                  <img src={getProfilePicture(profile)} alt = "You don't have a photo yet." height="640px" width="480px"/>
                   <h3>Change my photo</h3>
-                  <img src={fileUrl}/>
+                  <img src={fileUrl} height="640px" width="480px" alt = "Upload a photo?"/>
                     <input type="file" accept="image/*" onChange={processImage}></input>
                   <Form>
                   <Form.Group className="mb-3" controlId="formBasicEmail">
