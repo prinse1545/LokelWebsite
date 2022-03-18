@@ -41,13 +41,17 @@ const App = ({ Component, pageProps }) => {
   useEffect(() => {
     const tok = Cookies.get("o")
     const id = Cookies.get("e")
-
+    const user = Cookies.get("u")
     if(tok !== undefined) {
       utilityFunctionality.updateField({ auth: tok })
     }
 
     if(id !== undefined) {
       utilityFunctionality.updateField({ userId: id })
+    }
+
+    if(user !== undefined) {
+      utilityFunctionality.updateField({ user: JSON.parse(user) })
     }
   }, [])
 
@@ -104,7 +108,7 @@ const App = ({ Component, pageProps }) => {
       return Cookies.get(key)
     },
     updateField: updateField,
-    signin: (token, id) => {
+    signin: (token, user) => {
       // Function: signin, a function that signs in the user
       //
       // Parameter(s):
@@ -116,11 +120,11 @@ const App = ({ Component, pageProps }) => {
       //   none
 
       setCookie("o", token) // saving cookie for persitance
-      setCookie("e", id)
-
+      setCookie("e", user.id)
+      setCookie("u", JSON.stringify(user))
       updateField({ auth: token })
-      updateField({ userId: id })
-
+      updateField({ userId: user.id })
+      updateField({ user: user })
       router.push("/dashboard")
 
     },
@@ -140,17 +144,16 @@ const App = ({ Component, pageProps }) => {
       updateField({ auth: null })
     },
     auth: state.auth,
-    userId: state.userId
+    userId: state.userId,
+    user: state.user
   }
 
   const client = apolloConfig(state.auth)
-
   return (
     <>
       <Head>
        <meta name="viewport" content="width=device-width, initial-scale=1"/>
        <link rel="icon" href="/logo.png" />
-      />
       </Head>
       <ApolloProvider client={client}>
         <UtilityContext.Provider value={utilityFunctionality}>

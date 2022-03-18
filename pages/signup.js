@@ -41,6 +41,8 @@ const SIGN_UP = gql`
       user {
         id
         profile
+        email
+        username
       }
     }
   }
@@ -77,7 +79,7 @@ const SignUp = (props) => {
 
   useEffect(() => {
     if(data !== undefined && data?.signup?.token !== null) {
-      signin(data.signup.token, data.signup.user.id)
+      signin(data.signup.token, data.signup.user)
     }
   }, [data])
 
@@ -86,7 +88,6 @@ const SignUp = (props) => {
 
     const updateObj = {}
     updateObj[field] = val
-
     dispatch({ type: "UPDATE_FIELD", field: updateObj })
   }
 
@@ -101,9 +102,10 @@ const SignUp = (props) => {
     // deleting confirm password field
     delete newUser.confirmPassword
 
-    signup({ variables: Object.assign(newUser, { private: false, role: "BUSINESS" }) }).catch((err) => {setMsg(err.message);console.log(err)})
+    signup({ variables: Object.assign(user, { private: false, role: "BUSINESS" }) }).catch((err) => {setMsg(err.message); console.log(err.message)})
+    
   }
-
+  console.log("user object: ", user)
   return (
     <center>
       <div className={styles.left}>
