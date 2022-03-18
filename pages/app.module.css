@@ -72,3 +72,9 @@
 .event_card_style {
   width: 300px;
 }
+
+.row_div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}

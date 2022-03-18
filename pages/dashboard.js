@@ -17,7 +17,7 @@ import { useRouter } from "next/router"
 import { Button, Modal, Form, Row, Alert, Accordion, Card } from "react-bootstrap"
 import { PlusCircle, Pencil } from "react-bootstrap-icons";
 import ReactMapGL, { Marker } from "react-map-gl"
-import UtilityContext from "./config/utility"
+import UtilityContext from "../config/utility"
 import styles from "./app.module.css"
 import "mapbox-gl/dist/mapbox-gl.css"
 
@@ -113,6 +113,19 @@ const GET_USER_EVENTS = gql`
       title
       address
       description
+      link
+      type
+      weekdays
+      startAt
+      endAt
+    }
+  }
+`;
+
+const UPDATE_EVENT = gql`
+  mutation updateEvent($eventId: ID!, $data: JSON!) {
+    updateEvent(id: $eventId, data: $data) {
+      id
     }
   }
 `;
@@ -124,13 +137,15 @@ const Dashboard = ({ Component, pageProps }) => {
   const [modal, setModal] = useState(false);
   const [formType, setType] = useState("");
   const [errMsg, setMsg] = useState(null);
+  const [eventId, setId] = useState(null);
   const [googleQuery, setGQuery] = useState({ predictions: [] })
   const [query, setQuery] = useState([])
   const [getAddSugg, { data, loading, error }] = useMutation(GET_ADDRESS)
   const [postEvent, { data: eventData, error: eventError }] = useMutation(CREATE_EVENT)
-  const { data: events, loading: eventsLoading, error: eventsErr } = useQuery(GET_USER_EVENTS, {
+  const { data: events, loading: eventsLoading, error: eventsErr, refetch } = useQuery(GET_USER_EVENTS, {
     variables: { userId: userId }
   })
+  const [updateEvent, { data: updatedEvent, error: updateErr }] = useMutation(UPDATE_EVENT)
 
   const router = useRouter()
 
@@ -181,7 +196,7 @@ const Dashboard = ({ Component, pageProps }) => {
       "address": "",
       "description": "",
       "links": [],
-      "type": "",
+      "type": "Party",
       "weekdays": [],
       "startAt": "",
       "endAt": "",
@@ -215,6 +230,7 @@ const Dashboard = ({ Component, pageProps }) => {
     })
     setQuery("")
     setModal(false);
+    setId(null);
     setType("");
   }
 
@@ -244,7 +260,7 @@ const Dashboard = ({ Component, pageProps }) => {
       setType("location")
     }
     else {
-      console.log(userId)
+
       const finalPost = Object.assign(post, {
         location: { latitude: modalViewport.latitude, longitude: modalViewport.longitude },
         userLocation: { latitude: modalViewport.latitude, longitude: modalViewport.longitude },
@@ -256,11 +272,63 @@ const Dashboard = ({ Component, pageProps }) => {
         isActive: false,
         deployAt: post.startAt
       })
-      console.log(finalPost, eventTypeMap[post.type], post.type, post.weekdays)
-      // posting
-      postEvent({ variables: finalPost }).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+
+      if(eventId !== null) {
+        // taking out unecessary fields
+        const { isPublic, isBusiness, isActive, userLocation, ...updatePost } = finalPost
+
+        updateEvent({ variables: { eventId: eventId, data: updatePost } }).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+
+        // turning off
+        setId(null)
+      }
+      else {
+        // posting
+        postEvent({ variables: finalPost }).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err))})
+      }
+
+      refetch()
     }
 
+  }
+
+  const handleWeekdays = (e, mode = "on") => {
+    let newWeekdays = post.weekdays
+    const day = e.target.id
+    if(mode === "on") {
+      if(e.target.checked == false) {
+        newWeekdays = newWeekdays.filter((el) => el !== day);
+      }
+      else {
+        newWeekdays.push(day)
+      }
+    }
+    else {
+      newWeekdays = newWeekdays.filter((el) => el !== day);
+    }
+    updateField(newWeekdays, "weekdays")
+  }
+
+  const editEvent = (event) => {
+    dispatch({
+      type: "UPDATE_FIELD",
+      field: {
+        "title": event.title,
+        "address": event.address,
+        "description": event.description,
+        "links": event.link,
+        "type": event.type,
+        "weekdays": event.weekdays.map((day) => Object.keys(weekdayMap)[Object.values(weekdayMap).indexOf(day)]),
+        "startAt": event.startAt.slice(0, -8),
+        "endAt": event.endAt.slice(0, -8),
+      }
+    })
+
+    setModalViewport(Object.assign({}, modalViewport, event.location))
+
+    setModal(true)
+
+    setId(event.id)
   }
 
   return (
@@ -275,7 +343,7 @@ const Dashboard = ({ Component, pageProps }) => {
         />
         <div className={"row"}>
           <div className={styles.left}>
-            <Link href={"/home"}>
+            <Link href={"/"}>
               <Image
                src={"/logo.png"}
                height={40}
@@ -289,15 +357,16 @@ const Dashboard = ({ Component, pageProps }) => {
           </center>
         </div>
         <div>
-          <center>
+          <center style={{display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
             <h1>Your Posts</h1>
+            <PlusCircle size={32} className={styles.icon} onClick={() => setModal(true)}/>
           </center>
             <Accordion flush>
               {
                 events === undefined || events?.getUserEvents?.length === 0 ?
-                <Button variant="primary" onClick={() => setModal(true)}>
-                  Create Experience
-                </Button>
+                <center>
+                  <h3>Create your first experience</h3>
+                </center>
                 :
                 events?.getUserEvents.map((event, indx) => {
                   return (
@@ -316,11 +385,29 @@ const Dashboard = ({ Component, pageProps }) => {
                       <Accordion.Body>
                         <Card style={{ width: "100%", borderLeftWidth: 0 }}>
                           <Card.Body>
-                            <Pencil size={18} className={styles.icon} onClick={null}/>
-                            <h5>Links</h5>
-                            <h5>Category: {event.type}</h5>
+                            <div style={{display: "flex", flexDirection: "row", alignItems: "center"}}>
+                            <h6>Edit</h6>
+                            <Pencil size={18} className={styles.icon} onClick={() => editEvent(event)}/>
+                            </div>
+                            <hr />
+                            {
+                              event.link !== undefined && event?.link?.length > 0 &&
+                              <h5>Links</h5>
+                            }
+                            <h5>Category</h5>
+                            <h5 className="mb-2 text-muted">{Object.keys(eventTypeMap)[Object.values(eventTypeMap).indexOf(event.type)]}</h5>
                             <h5>Days of Occurance</h5>
+                            <h5 className="mb-2 text-muted">
+                              {event?.weekdays?.map((day, indx) => {
+                                const suffix = indx == event.weekdays.length - 1 ? "" : ", "
+                                return Object.keys(weekdayMap)[Object.values(weekdayMap).indexOf(day)] + suffix
+                              })
+                              }
+                            </h5>
                             <h5>Start & End Times</h5>
+                            <h5 className="mb-2 text-muted">
+                              {new Date(event.startAt).toLocaleString("en-US")} - {new Date(event.endAt).toLocaleString("en-US")}
+                            </h5>
                           </Card.Body>
                         </Card>
                       </Accordion.Body>
@@ -332,7 +419,7 @@ const Dashboard = ({ Component, pageProps }) => {
         </div>
         <footer>
           <center>
-           Lokel LLC © 2021
+           Lokel LLC © 2021-22
           </center>
         </footer>
         <Modal show={modal} onHide={() => hideModal()}>
@@ -390,7 +477,7 @@ const Dashboard = ({ Component, pageProps }) => {
                 </Form.Group>
                 <h4>Links</h4>
                 {
-                  post.links.length > 0 &&
+                  post?.links?.length > 0 &&
 
                   post.links.map((link, indx) => {
 
@@ -416,7 +503,7 @@ const Dashboard = ({ Component, pageProps }) => {
                 {
                   post.links < 2 &&
                   <PlusCircle size={18} className={styles.icon} onClick={() => {
-                    if(post.links.length < 2) {
+                    if(post?.links?.length < 2) {
                       const newArr = Array.from(post.links)
                       newArr.push("")
                       dispatch({ type: "UPDATE_FIELD", field: { links: newArr } })
@@ -440,18 +527,18 @@ const Dashboard = ({ Component, pageProps }) => {
                 <Form.Group className="mb-3" controlId="occurances">
                   {
                     occDays.map((day) => {
-                      return <Form.Check type="radio" label={day} inline onChange={(e) => {
-                        let newWeekdays = post.weekdays
 
-                        if(e.target.checked == false) {
-                          newWeekdays = newWeekdays.filter((el) => el !== day);
-                        }
-                        else {
-                          newWeekdays.push(day)
-                        }
-
-                        updateField(newWeekdays, "weekdays")
-                      }} />
+                      return (
+                        <Form.Check
+                         id={day}
+                         type="radio"
+                         label={day}
+                         checked={post.weekdays.includes(day)}
+                         inline
+                         onChange={(e) => handleWeekdays(e)}
+                         onClick={(e) => handleWeekdays(e, "off")}
+                        />
+                       )
                     })
                   }
                 </Form.Group>
