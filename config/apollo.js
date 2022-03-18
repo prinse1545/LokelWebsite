@@ -44,7 +44,7 @@ const apolloConfig = (token) => {
 
   //creating websocket link
   const wsLink = new WebSocketLink({
-    uri: "ws://localhost:6535",
+    uri: "wss://lokel.xyz/api",
     options: {
       reconnect: true,
       connectionParams: {
@@ -56,7 +56,7 @@ const apolloConfig = (token) => {
 
   //creating http link
   const httpLink = new HttpLink({
-    uri: "http://localhost:6535"
+    uri: "https://lokel.xyz/api"
   });
 
   //creating authentication link

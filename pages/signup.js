@@ -15,7 +15,7 @@ import { useMutation, gql } from "@apollo/client";
 import { useRouter } from "next/router"
 import { Form, Button, Alert } from "react-bootstrap"
 import { ArrowLeft } from "react-bootstrap-icons";
-import UtilityContext from "./config/utility"
+import UtilityContext from "../config/utility"
 import styles from "./app.module.css"
 
 
@@ -101,7 +101,7 @@ const SignUp = (props) => {
     // deleting confirm password field
     delete newUser.confirmPassword
 
-    signup({ variables: Object.assign(newUser, { private: false, role: "BUSINESS" }) }).catch((err) => setMsg(err.message))
+    signup({ variables: Object.assign(newUser, { private: false, role: "BUSINESS" }) }).catch((err) => {setMsg(err.message);console.log(err)})
   }
 
   return (

@@ -16,7 +16,7 @@ import { useRouter } from "next/router"
 import { useLazyQuery, gql } from "@apollo/client";
 import { Form, Button, Row, Alert } from "react-bootstrap"
 import { ArrowLeft } from "react-bootstrap-icons";
-import UtilityContext from "./config/utility"
+import UtilityContext from "../config/utility"
 import styles from "./app.module.css"
 
 

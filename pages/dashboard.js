@@ -17,7 +17,7 @@ import { useRouter } from "next/router"
 import { Button, Modal, Form, Row, Alert, Accordion, Card } from "react-bootstrap"
 import { PlusCircle, Pencil } from "react-bootstrap-icons";
 import ReactMapGL, { Marker } from "react-map-gl"
-import UtilityContext from "./config/utility"
+import UtilityContext from "../config/utility"
 import styles from "./app.module.css"
 import "mapbox-gl/dist/mapbox-gl.css"
 

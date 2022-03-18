@@ -11,11 +11,11 @@
 // importing tools
 import React, { useReducer, useEffect } from "react";
 import { ApolloProvider } from "@apollo/client";
-import { apolloConfig } from "./config/apollo";
+import { apolloConfig } from "../config/apollo";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
-import UtilityContext from "./config/utility";
+import UtilityContext from "../config/utility";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/globals.css"
