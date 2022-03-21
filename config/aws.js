@@ -4,17 +4,18 @@ import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 //importing aws token
 
-const S3Config = () => {
+const S3Config = (poolId) => {
 
-  const AWS_ID_POOL = process.env.AWS_ID_POOL
+
   // creating aws s3 client
   const client = new S3Client({
     region: "us-east-2",
     credentials: fromCognitoIdentityPool({
       client: new CognitoIdentityClient({ region: "us-east-2" }),
-      identityPoolId: AWS_ID_POOL
+      identityPoolId: poolId
     })
   })
+
 
   // returning client
   return client;

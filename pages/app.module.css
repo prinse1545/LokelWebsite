@@ -61,6 +61,12 @@
   cursor: grab;
 }
 
+.profile_icon {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+
 .address_panel {
   cursor: grab;
 }

@@ -30,6 +30,7 @@ query login($email: String!, $password: String!) {
       profile
       email
       username
+      verified
     }
   }
 }

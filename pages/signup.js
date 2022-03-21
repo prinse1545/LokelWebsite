@@ -43,6 +43,7 @@ const SIGN_UP = gql`
         profile
         email
         username
+        verified
       }
     }
   }
@@ -103,7 +104,7 @@ const SignUp = (props) => {
     delete newUser.confirmPassword
 
     signup({ variables: Object.assign(user, { private: false, role: "BUSINESS" }) }).catch((err) => {setMsg(err.message); console.log(err.message)})
-    
+
   }
   console.log("user object: ", user)
   return (

@@ -15,9 +15,11 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { Button, Modal, Form, Row, Alert, Accordion, Card } from "react-bootstrap"
-import { PlusCircle, Pencil } from "react-bootstrap-icons";
+import { PlusCircle, Pencil, PersonCircle } from "react-bootstrap-icons";
 import ReactMapGL, { Marker } from "react-map-gl"
 import UtilityContext from "../config/utility"
+import { S3Config } from "../config/aws"
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import styles from "./app.module.css"
 import "mapbox-gl/dist/mapbox-gl.css"
 
@@ -131,9 +133,25 @@ const UPDATE_EVENT = gql`
 `;
 
 
+const UPDATE_USER = gql`
+  mutation updateUser(
+    $id: ID!,
+    $data: JSON!,
+  ) {
+    updateUser(
+      id: $id,
+      data: $data,
+    ) {
+      username
+      email
+      profile
+    }
+  }
+`;
+
 const Dashboard = ({ Component, pageProps }) => {
 
-  const { userId } = useContext(UtilityContext)
+  const { user, userId, auth, signout, setCookie, updateField: updateGlobalUser} = useContext(UtilityContext)
   const [modal, setModal] = useState(false);
   const [formType, setType] = useState("");
   const [errMsg, setMsg] = useState(null);
@@ -146,8 +164,11 @@ const Dashboard = ({ Component, pageProps }) => {
     variables: { userId: userId }
   })
   const [updateEvent, { data: updatedEvent, error: updateErr }] = useMutation(UPDATE_EVENT)
+  const [updateUser, { data: updatedUser, error: updatedUserErr }] = useMutation(UPDATE_USER)
 
   const router = useRouter()
+
+  const s3 = S3Config(process.env.NEXT_PUBLIC_AWS_ID_POOL)
 
   const [viewport, setViewport] = useState({
     width: "100%",
@@ -204,12 +225,111 @@ const Dashboard = ({ Component, pageProps }) => {
     }
   )
 
+  const [_user, dispatchUser] = useReducer(
+    (prevUser, action) => {
+      switch (action.type) {
+        case "UPDATE_FIELD":
+          return Object.assign({}, prevUser, action.field)
+        default:
+          return prevUser
+      }
+    },
+    {
+      "username": "",
+      "profile": "",
+      "email": "",
+      "password": "",
+    }
+  )
+
   const updateField = (val, field) => {
 
     const updateObj = {}
     updateObj[field] = val
 
     dispatch({ type: "UPDATE_FIELD", field: updateObj })
+  }
+
+  const usersEqual = () => {
+
+    return _user.username === user.username && _user.email === user.email && _user.password === "" && _user.profile === ""
+  }
+
+  const updateUserField = (val, field) => {
+    const updateObj = {}
+    updateObj[field] = val
+
+    dispatchUser({ type: "UPDATE_FIELD", field: updateObj })
+  }
+
+  const updateFieldCookies = (newUser) => {
+    updateGlobalUser(newUser)
+    setCookie("u", JSON.stringify(newUser))
+  }
+
+  useEffect(
+    () => {
+      if(user) {
+        dispatchUser({ type: "UPDATE_FIELD", field: {
+          username: user.username,
+          email: user.email
+        } })
+      }
+    }, [user]
+  )
+
+  const getProfilePicture = (profileLink) => {
+    return `https://verbindung.s3.us-east-2.amazonaws.com/users/${profileLink}/normal.png`
+  }
+
+  const setProfilePicture = async () => {
+    //upload to s3, get line
+
+    try {
+      const split = _user.profile.split(",")
+      const blob = await fetch(_user.profile)
+
+      // uploading new picture to aws
+      const res = await s3.send(
+        new PutObjectCommand({
+          Bucket: "verbindung",
+          Key: "preprocess/users/" + user.profile + ".png",
+          Body: await blob.blob()
+        })
+      );
+    }
+    catch (e) {
+      console.log(e)
+    }
+  }
+
+  const processImage = (event) => {
+
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      updateUserField(reader.result, "profile")
+    })
+    reader.readAsDataURL(event.target.files[0])
+ }
+
+  const updateProfile = () => {
+      //update email and password if changed
+      if(_user.username !== "" && _user.username !== user.username) {
+        updateUser({ variables: { id: userId, data: { username: _user.username } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
+      }
+
+      if(_user.email !== "" && _user.email !== user.email) {
+          updateUser({ variables: { id: userId, data: { email: _user.email, role: "BUSINESS" } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
+      }
+
+      if(_user.password !== "") {
+          updateUser({ variables: { id: userId, data: { password: _user.password } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
+        }
+
+      if(_user.profile !== "") {
+        setProfilePicture() //upload picture to AWS
+      }
   }
 
   const hideModal = () => {
@@ -331,6 +451,227 @@ const Dashboard = ({ Component, pageProps }) => {
     setId(event.id)
   }
 
+  const renderModalBody = () => {
+    if(formType == "location") {
+      return (
+        <div>
+          <h4>Location (drag set precise location)</h4>
+          <ReactMapGL
+            {...modalViewport}
+            onViewportChange={nextViewport => setModalViewport(nextViewport)}
+            mapboxApiAccessToken={"pk.eyJ1IjoibG9rZWwiLCJhIjoiY2thdm1meGZ1MTA1MDJ5b2Mydjh5dGx1dyJ9.noZVSQqdjHFatcTJcLUk7A"}
+            mapStyle={"mapbox://styles/lokel/ckbbguxgw08mv1ipbeym55gn6"}
+          >
+            <Marker longitude={modalViewport.longitude} latitude={modalViewport.latitude} anchor="bottom">
+              <h4>📍</h4>
+            </Marker>
+          </ReactMapGL>
+        </div>
+      )
+    } else if(formType == "profile") {
+
+      return (
+        <div>
+          {
+              auth === null ?
+              <>
+                <h2>Sorry, you're not logged in. Log in or sign up?</h2>
+              </>
+              :
+              <>
+              <br/>
+                <Form>
+                <Form.Group>
+                  <Form.Label>Profile Picture</Form.Label>
+                  <br/>
+
+                  <img
+                   src={
+                     getProfilePicture(user.profile)
+                   }
+                   height="40px"
+                   width="40px"
+                   borderRadius="10px"
+                   alt = "Please Upload a Picture"
+                  />
+                  <Form.Control type="file" accept="image/*" onChange={(e) => processImage(e)} />
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="formBasicEmail">
+                      <Form.Label>Username</Form.Label>
+                      <Form.Control type="email" value={_user.username} onChange={(e) => updateUserField(e.target.value, "username")}/>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3" controlId="formBasicEmail">
+                      <Form.Label>Email</Form.Label>
+                      <Form.Control type="email" value={_user.email} onChange={(e) => updateUserField(e.target.value, "email")}/>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3" controlId="formBasicPassword">
+                      <Form.Label>Password</Form.Label>
+                      <Form.Control type="password" placeholder="Password" onChange={(e) => updateUserField(e.target.value, "password")}/>
+                  </Form.Group>
+                  </Form>
+                  {
+                      !usersEqual() ?
+                      <Button variant="primary" type="submit" onClick={() => {updateProfile()}}>
+                      Update Profile
+                      </Button>
+                      :
+                      <h5>Change your information before updating your profile.</h5>
+                  }
+              </>
+          }
+        </div>
+      )
+    }
+    else {
+      return (
+        <Form>
+          <Form.Group className="mb-3" controlId="title">
+            <Form.Control
+             type={"text"}
+             placeholder={"Title"}
+             onChange={(e) => updateField(e.target.value, "title")}
+             value={post.title}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="address">
+            <Form.Control
+             type={"text"}
+             placeholder={"Address"}
+             onChange={(e) => search(e.target.value)}
+             value={post.address ? post.address : query}
+            />
+            <Form.Text className="text-muted">
+              The address where the experience will be held
+            </Form.Text>
+          </Form.Group>
+          <div>
+            {
+              googleQuery.length > 0 && post.address == "" &&
+              googleQuery.map((pred) => {
+                return (
+                  <>
+                    <h5
+                     className={styles.address_panel}
+                     onClick={() => updateField(pred.description, "address")}
+                    >
+                     {pred.description}
+                    </h5>
+                    <hr/>
+                  </>
+                )
+              })
+            }
+          </div>
+          <Form.Group className="mb-3" controlId="description">
+            <Form.Control
+             type={"text"}
+             placeholder={"Description"}
+             onChange={(e) => updateField(e.target.value, "description")}
+             value={post.description}
+            />
+          </Form.Group>
+          <h4>Links</h4>
+          {
+            post?.links?.length > 0 &&
+
+            post.links.map((link, indx) => {
+
+              return (
+                <Form.Group className="mb-3" controlId="links">
+                  <Form.Control
+                   type={"text"}
+                   placeholder={"Enter a valid link"}
+                   value={posts[indx]}
+                   onChange={(e) => {
+
+                     let newLinks = Array.from(post.links)
+
+                     newLinks[indx] = e.target.value
+
+                     updateField(newLinks, "links")
+                   }}
+                  />
+                </Form.Group>
+              )
+            })
+          }
+          {
+            post.links < 2 &&
+            <PlusCircle size={18} className={styles.icon} onClick={() => {
+              if(post?.links?.length < 2) {
+                const newArr = Array.from(post.links)
+                newArr.push("")
+                dispatch({ type: "UPDATE_FIELD", field: { links: newArr } })
+              }
+              else {
+                setMsg("You can have a maximum of 2 links!")
+              }
+            }}/>
+          }
+          <Form.Group className="mb-3" controlId="link">
+            <Form.Select value={post.type} onChange={(e) => updateField(e.target.value, "type")}>
+              {
+                eventTypes.map((type) => <option>{type}</option>)
+              }
+            </Form.Select>
+            <Form.Text className="text-muted">
+              The category into which your experience best fits
+            </Form.Text>
+          </Form.Group>
+          <h4>Days of Occurance</h4>
+          <Form.Group className="mb-3" controlId="occurances">
+            {
+              occDays.map((day) => {
+
+                return (
+                  <Form.Check
+                   id={day}
+                   type="radio"
+                   label={day}
+                   checked={post.weekdays.includes(day)}
+                   inline
+                   onChange={(e) => handleWeekdays(e)}
+                   onClick={(e) => handleWeekdays(e, "off")}
+                  />
+                 )
+              })
+            }
+          </Form.Group>
+          <h4>Start & End Times</h4>
+          <Row>
+          <input
+           type="datetime-local"
+           id="start-time"
+           name="meeting-time"
+           value={post.startAt}
+           onChange={(e) => updateField(e.target.value, "startAt")}
+           />
+           <input
+            type="datetime-local"
+            id="end-time"
+            name="meeting-time"
+            value={post.endAt}
+            onChange={(e) => updateField(e.target.value, "endAt")}
+            />
+          </Row>
+        </Form>
+      )
+    }
+  }
+
+  const getModalSubmissionString = () => {
+
+    if(formType == "location") {
+      return "Post Experience"
+    }
+    else {
+      return "Set Location"
+    }
+  }
+
+
   return (
     <>
       <div>
@@ -350,6 +691,9 @@ const Dashboard = ({ Component, pageProps }) => {
                width={40}
                />
              </Link>
+           </div>
+           <div className={styles.right}>
+              <PersonCircle size={32} className={styles.profile_icon} onClick={() => {setType("profile");setModal(true)}}/>
            </div>
           </div>
           <center>
@@ -424,167 +768,27 @@ const Dashboard = ({ Component, pageProps }) => {
         </footer>
         <Modal show={modal} onHide={() => hideModal()}>
           <Modal.Header closeButton>
-            <Modal.Title>Create Experience</Modal.Title>
+            <Modal.Title>
+              {
+                formType === "profile" ?
+                "Profile"
+                :
+                "Create Experience"
+              }
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {
-              formType !== "location" ?
-              <Form>
-                <Form.Group className="mb-3" controlId="title">
-                  <Form.Control
-                   type={"text"}
-                   placeholder={"Title"}
-                   onChange={(e) => updateField(e.target.value, "title")}
-                   value={post.title}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="address">
-                  <Form.Control
-                   type={"text"}
-                   placeholder={"Address"}
-                   onChange={(e) => search(e.target.value)}
-                   value={post.address ? post.address : query}
-                  />
-                  <Form.Text className="text-muted">
-                    The address where the experience will be held
-                  </Form.Text>
-                </Form.Group>
-                <div>
-                  {
-                    googleQuery.length > 0 && post.address == "" &&
-                    googleQuery.map((pred) => {
-                      return (
-                        <>
-                          <h5
-                           className={styles.address_panel}
-                           onClick={() => updateField(pred.description, "address")}
-                          >
-                           {pred.description}
-                          </h5>
-                          <hr/>
-                        </>
-                      )
-                    })
-                  }
-                </div>
-                <Form.Group className="mb-3" controlId="description">
-                  <Form.Control
-                   type={"text"}
-                   placeholder={"Description"}
-                   onChange={(e) => updateField(e.target.value, "description")}
-                   value={post.description}
-                  />
-                </Form.Group>
-                <h4>Links</h4>
-                {
-                  post?.links?.length > 0 &&
-
-                  post.links.map((link, indx) => {
-
-                    return (
-                      <Form.Group className="mb-3" controlId="links">
-                        <Form.Control
-                         type={"text"}
-                         placeholder={"Enter a valid link"}
-                         value={posts[indx]}
-                         onChange={(e) => {
-
-                           let newLinks = Array.from(post.links)
-
-                           newLinks[indx] = e.target.value
-
-                           updateField(newLinks, "links")
-                         }}
-                        />
-                      </Form.Group>
-                    )
-                  })
-                }
-                {
-                  post.links < 2 &&
-                  <PlusCircle size={18} className={styles.icon} onClick={() => {
-                    if(post?.links?.length < 2) {
-                      const newArr = Array.from(post.links)
-                      newArr.push("")
-                      dispatch({ type: "UPDATE_FIELD", field: { links: newArr } })
-                    }
-                    else {
-                      setMsg("You can have a maximum of 2 links!")
-                    }
-                  }}/>
-                }
-                <Form.Group className="mb-3" controlId="link">
-                  <Form.Select value={post.type} onChange={(e) => updateField(e.target.value, "type")}>
-                    {
-                      eventTypes.map((type) => <option>{type}</option>)
-                    }
-                  </Form.Select>
-                  <Form.Text className="text-muted">
-                    The category into which your experience best fits
-                  </Form.Text>
-                </Form.Group>
-                <h4>Days of Occurance</h4>
-                <Form.Group className="mb-3" controlId="occurances">
-                  {
-                    occDays.map((day) => {
-
-                      return (
-                        <Form.Check
-                         id={day}
-                         type="radio"
-                         label={day}
-                         checked={post.weekdays.includes(day)}
-                         inline
-                         onChange={(e) => handleWeekdays(e)}
-                         onClick={(e) => handleWeekdays(e, "off")}
-                        />
-                       )
-                    })
-                  }
-                </Form.Group>
-                <h4>Start & End Times</h4>
-                <Row>
-                <input
-                 type="datetime-local"
-                 id="start-time"
-                 name="meeting-time"
-                 value={post.startAt}
-                 onChange={(e) => updateField(e.target.value, "startAt")}
-                 />
-                 <input
-                  type="datetime-local"
-                  id="end-time"
-                  name="meeting-time"
-                  value={post.endAt}
-                  onChange={(e) => updateField(e.target.value, "endAt")}
-                  />
-                </Row>
-              </Form>
-              :
-              <div>
-                <h4>Location (drag set precise location)</h4>
-                <ReactMapGL
-                  {...modalViewport}
-                  onViewportChange={nextViewport => setModalViewport(nextViewport)}
-                  mapboxApiAccessToken={"pk.eyJ1IjoibG9rZWwiLCJhIjoiY2thdm1meGZ1MTA1MDJ5b2Mydjh5dGx1dyJ9.noZVSQqdjHFatcTJcLUk7A"}
-                  mapStyle={"mapbox://styles/lokel/ckbbguxgw08mv1ipbeym55gn6"}
-                >
-                  <Marker longitude={modalViewport.longitude} latitude={modalViewport.latitude} anchor="bottom">
-                    <h4>📍</h4>
-                  </Marker>
-                </ReactMapGL>
-              </div>
+              renderModalBody()
             }
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="primary" onClick={() => postXperience()}>
-              {
-                formType == "" ?
-                "Set Location"
-                :
-                "Post Experience"
-              }
-            </Button>
+            {
+              formType !== "profile" &&
+              <Button variant="primary" onClick={() => postXperience()}>
+                { getModalSubmissionString() }
+              </Button>
+            }
           </Modal.Footer>
         </Modal>
         {

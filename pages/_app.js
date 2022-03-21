@@ -34,7 +34,8 @@ const App = ({ Component, pageProps }) => {
     },
     {
       auth: null,
-      userId: ""
+      userId: "",
+      user: null
     }
   )
 
