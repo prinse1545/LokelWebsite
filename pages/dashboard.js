@@ -142,9 +142,11 @@ const UPDATE_USER = gql`
       id: $id,
       data: $data,
     ) {
-      username
-      email
+      id
       profile
+      email
+      username
+      verified
     }
   }
 `;
@@ -264,6 +266,7 @@ const Dashboard = ({ Component, pageProps }) => {
 
   const updateFieldCookies = (newUser) => {
     updateGlobalUser(newUser)
+
     setCookie("u", JSON.stringify(newUser))
   }
 

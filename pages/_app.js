@@ -15,7 +15,9 @@ import { apolloConfig } from "../config/apollo";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
+import aes from "aes-js";
 import UtilityContext from "../config/utility";
+import { configAES } from "../config/crypto";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/globals.css"
@@ -40,9 +42,9 @@ const App = ({ Component, pageProps }) => {
   )
 
   useEffect(() => {
-    const tok = Cookies.get("o")
-    const id = Cookies.get("e")
-    const user = Cookies.get("u")
+    const tok = getCookie("o")
+    const id = getCookie("e")
+    const user = getCookie("u")
     if(tok !== undefined) {
       utilityFunctionality.updateField({ auth: tok })
     }
@@ -52,6 +54,7 @@ const App = ({ Component, pageProps }) => {
     }
 
     if(user !== undefined) {
+      console.log(user)
       utilityFunctionality.updateField({ user: JSON.parse(user) })
     }
   }, [])
@@ -72,8 +75,36 @@ const App = ({ Component, pageProps }) => {
     //
     //   none
 
+    const aesCtr = configAES(process.env.NEXT_PUBLIC_KEY)
+
+    const encryptedVal = aesCtr.encrypt(aes.utils.utf8.toBytes(value));
+
     // need to encrypt
-    Cookies.set(key, value)
+    Cookies.set(key, aes.utils.hex.fromBytes(encryptedVal))
+  }
+
+  const getCookie = (key) => {
+    // Function: getCookie, a function that gets a cookie with the desired key
+    //
+    // Parameter(s):
+    //
+    //   self explanatory
+    //
+    // Return Value(s):
+    //
+    //   none
+
+    const aesCtr = configAES(process.env.NEXT_PUBLIC_KEY)
+
+    if(Cookies.get(key) === undefined) {
+      return
+    }
+    // need to decrpyt
+    const encryptedVal = aes.utils.hex.toBytes(Cookies.get(key))
+
+    const decryptedVal = aes.utils.utf8.fromBytes(aesCtr.decrypt(encryptedVal))
+
+    return decryptedVal
   }
 
   const updateField = (field) => {
@@ -94,20 +125,7 @@ const App = ({ Component, pageProps }) => {
   // functions for utility context
   const utilityFunctionality = {
     setCookie: setCookie,
-    getCookie: (key) => {
-      // Function: getCookie, a function that gets a cookie with the desired key
-      //
-      // Parameter(s):
-      //
-      //   self explanatory
-      //
-      // Return Value(s):
-      //
-      //   none
-
-      // need to decrpyt
-      return Cookies.get(key)
-    },
+    getCookie: getCookie,
     updateField: updateField,
     signin: (token, user) => {
       // Function: signin, a function that signs in the user
@@ -141,6 +159,8 @@ const App = ({ Component, pageProps }) => {
       //   none
 
       Cookies.remove("o")
+      Cookies.remove("e")
+      Cookies.remove("u")
 
       updateField({ auth: null })
     },
@@ -148,8 +168,15 @@ const App = ({ Component, pageProps }) => {
     userId: state.userId,
     user: state.user
   }
-
+  // const enc = (
+  //   aes.utils.hex.fromBytes(aesCtr.encrypt(aes.utils.utf8.toBytes(
+  //   '"{\"__typename\":\"User\",\"id\":\"61df82de857aba0008692f99\",\"profile\":\"6aadd67454425e8d428ced535f779c3aeae85130d01cd3e695189e3b364a463f4951d73081313f73377cdd19827de0fd51d8033b64aadc12e07d5f401451d9\",\"email\":\"philipp.msrivastava@gmail.com\",\"username\":\"LokelLLC6B\",\"verified\":false}"'
+  // ))))
+  // console.log(enc)
+  // const dec = aes.utils.utf8.fromBytes(aes.utils.hex.toBytes(enc))
+  // console.log(dec)
   const client = apolloConfig(state.auth)
+
   return (
     <>
       <Head>
