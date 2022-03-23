@@ -54,7 +54,6 @@ const App = ({ Component, pageProps }) => {
     }
 
     if(user !== undefined) {
-      console.log(user)
       utilityFunctionality.updateField({ user: JSON.parse(user) })
     }
   }, [])
@@ -168,13 +167,7 @@ const App = ({ Component, pageProps }) => {
     userId: state.userId,
     user: state.user
   }
-  // const enc = (
-  //   aes.utils.hex.fromBytes(aesCtr.encrypt(aes.utils.utf8.toBytes(
-  //   '"{\"__typename\":\"User\",\"id\":\"61df82de857aba0008692f99\",\"profile\":\"6aadd67454425e8d428ced535f779c3aeae85130d01cd3e695189e3b364a463f4951d73081313f73377cdd19827de0fd51d8033b64aadc12e07d5f401451d9\",\"email\":\"philipp.msrivastava@gmail.com\",\"username\":\"LokelLLC6B\",\"verified\":false}"'
-  // ))))
-  // console.log(enc)
-  // const dec = aes.utils.utf8.fromBytes(aes.utils.hex.toBytes(enc))
-  // console.log(dec)
+
   const client = apolloConfig(state.auth)
 
   return (

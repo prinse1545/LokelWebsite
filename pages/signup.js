@@ -85,6 +85,7 @@ const SignUp = (props) => {
   useEffect(async () => {
     if(data !== undefined && data?.signup?.token !== null) {
       try {
+
         const blob = await fetch(user.profile)
 
         // uploading new picture to aws
@@ -124,7 +125,7 @@ const SignUp = (props) => {
       return
     }
     // creating new user
-    const newUser = user
+    const newUser = Object.assign({}, {}, user)
     // deleting confirm password field
     delete newUser.confirmPassword
     delete newUser.profile
@@ -139,6 +140,7 @@ const SignUp = (props) => {
     reader.addEventListener("load", () => {
       updateField(reader.result, "profile")
     })
+
     reader.readAsDataURL(event.target.files[0])
   }
 
