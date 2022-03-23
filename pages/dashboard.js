@@ -286,7 +286,6 @@ const Dashboard = ({ Component, pageProps }) => {
     //upload to s3, get line
 
     try {
-      const split = _user.profile.split(",")
       const blob = await fetch(_user.profile)
 
       // uploading new picture to aws
@@ -297,6 +296,8 @@ const Dashboard = ({ Component, pageProps }) => {
           Body: await blob.blob()
         })
       );
+
+      hideModal()
     }
     catch (e) {
       console.log(e)
@@ -311,20 +312,20 @@ const Dashboard = ({ Component, pageProps }) => {
       updateUserField(reader.result, "profile")
     })
     reader.readAsDataURL(event.target.files[0])
- }
+  }
 
   const updateProfile = () => {
       //update email and password if changed
       if(_user.username !== "" && _user.username !== user.username) {
-        updateUser({ variables: { id: userId, data: { username: _user.username } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
+        updateUser({ variables: { id: userId, data: { username: _user.username } } }).then((data) => {updateFieldCookies(data.data.updateUser);hideModal()}).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
       }
 
       if(_user.email !== "" && _user.email !== user.email) {
-          updateUser({ variables: { id: userId, data: { email: _user.email, role: "BUSINESS" } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
+          updateUser({ variables: { id: userId, data: { email: _user.email, role: "BUSINESS" } } }).then((data) => {updateFieldCookies(data.data.updateUser);hideModal()}).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
       }
 
       if(_user.password !== "") {
-          updateUser({ variables: { id: userId, data: { password: _user.password } } }).then((data) => updateFieldCookies(data.data.updateUser)).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
+          updateUser({ variables: { id: userId, data: { password: _user.password } } }).then((data) => {updateFieldCookies(data.data.updateUser);hideModal()}).catch((err) => {setMsg(err.message);console.log(JSON.stringify(err));})
         }
 
       if(_user.profile !== "") {
@@ -703,13 +704,23 @@ const Dashboard = ({ Component, pageProps }) => {
         <div>
           <center style={{display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
             <h1>Your Posts</h1>
-            <PlusCircle size={32} className={styles.icon} onClick={() => setModal(true)}/>
+            <PlusCircle size={32} className={styles.icon} onClick={() => {
+              // if(user.verified) {
+              //   setModal(true)
+              // }
+              // else {
+              //   setMsg("Please wait for us to verify your account before posting!")
+              // }
+              setModal(true)
+            }}/>
           </center>
             <Accordion flush>
               {
                 events === undefined || events?.getUserEvents?.length === 0 ?
                 <center>
+                  <br/><br/><br/><br/>
                   <h3>Create your first experience</h3>
+                  <br/><br/><br/><br/>
                 </center>
                 :
                 events?.getUserEvents.map((event, indx) => {

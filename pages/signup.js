@@ -16,6 +16,8 @@ import { useRouter } from "next/router"
 import { Form, Button, Alert } from "react-bootstrap"
 import { ArrowLeft } from "react-bootstrap-icons";
 import UtilityContext from "../config/utility"
+import { S3Config } from "../config/aws"
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import styles from "./app.module.css"
 
 
@@ -70,16 +72,34 @@ const SignUp = (props) => {
       "username": "",
       "password": "",
       "confirmPassword": "",
-      "acceptedTerms": false
+      "acceptedTerms": false,
+      "profile": ""
     }
   )
 
   const [signup, { data, error, loading }] = useMutation(SIGN_UP)
 
   const router = useRouter()
+  const s3 = S3Config(process.env.NEXT_PUBLIC_AWS_ID_POOL)
 
-  useEffect(() => {
+  useEffect(async () => {
     if(data !== undefined && data?.signup?.token !== null) {
+      try {
+        const blob = await fetch(user.profile)
+
+        // uploading new picture to aws
+        const res = await s3.send(
+          new PutObjectCommand({
+            Bucket: "verbindung",
+            Key: "preprocess/users/" + data.signup.user.profile + ".png",
+            Body: await blob.blob()
+          })
+        );
+      }
+      catch (e) {
+        setMsg("Something went wrong with uploading your profile picture!")
+      }
+
       signin(data.signup.token, data.signup.user)
     }
   }, [data])
@@ -98,15 +118,30 @@ const SignUp = (props) => {
       setMsg("It looks like the two passwords don't match!")
       return
     }
+
+    if(user.profile === "") {
+      setMsg("Please Select a profile picture!")
+      return
+    }
     // creating new user
     const newUser = user
     // deleting confirm password field
     delete newUser.confirmPassword
+    delete newUser.profile
 
-    signup({ variables: Object.assign(user, { private: false, role: "BUSINESS" }) }).catch((err) => {setMsg(err.message); console.log(err.message)})
+    signup({ variables: Object.assign(newUser, { private: false, role: "BUSINESS" }) }).catch((err) => {setMsg(err.message); console.log(err.message)})
 
   }
-  console.log("user object: ", user)
+  const processImage = (event) => {
+
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      updateField(reader.result, "profile")
+    })
+    reader.readAsDataURL(event.target.files[0])
+  }
+
   return (
     <center>
       <div className={styles.left}>
@@ -143,6 +178,13 @@ const SignUp = (props) => {
              The username you want other users to see
            </Form.Text>
          </Form.Group>
+         <Form.Group>
+           <Form.Control type="file" accept="image/*" onChange={(e) => processImage(e)} />
+           <Form.Text className="text-muted">
+             Your Profile Picture (Which will appear in the app)
+           </Form.Text>
+         </Form.Group>
+         <br />
          <Form.Group className="mb-3" controlId="password">
            <Form.Control
             type={"password"}
