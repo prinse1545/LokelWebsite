@@ -708,13 +708,12 @@ const Dashboard = ({ Component, pageProps }) => {
           <center style={{display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
             <h1>Your Posts</h1>
             <PlusCircle size={32} className={styles.icon} onClick={() => {
-              // if(user.verified) {
-              //   setModal(true)
-              // }
-              // else {
-              //   setMsg("Please wait for us to verify your account before posting!")
-              // }
-              setModal(true)
+              if(user.verified) {
+                setModal(true)
+              }
+              else {
+                setMsg("Please wait for us to verify your account before posting!")
+              }
             }}/>
           </center>
             <Accordion flush>
